@@ -1,21 +1,3 @@
 {
-  "version": 2,
-  "functions": {
-    "api/telegram.js": { "memory": 256, "maxDuration": 15 },
-    "api/nse.js":      { "memory": 256, "maxDuration": 15 }
-  },
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)",     "dest": "/public/$1" }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin",  "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
-      ]
-    }
-  ]
+  "version": 2
 }
