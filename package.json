@@ -1,0 +1,11 @@
+{
+  "name": "stockpro-dashboard",
+  "version": "1.0.0",
+  "description": "StockPro Live Dashboard — Telegram + NSE Real-Time",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  }
+}
