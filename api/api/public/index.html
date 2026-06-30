@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>StockPro Live Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+:root{
+  --bg:#060a12;--s1:#0b1120;--s2:#101828;--s3:#172035;
+  --border:#1c2d47;
+  --green:#00e676;--green2:rgba(0,230,118,.12);
+  --yellow:#ffca28;--yellow2:rgba(255,202,40,.12);
+  --red:#ff5252;--red2:rgba(255,82,82,.12);
+  --blue:#40c4ff;--blue2:rgba(64,196,255,.1);
+  --purple:#b388ff;--orange:#ffab40;
+  --text:#cdd9f0;--muted:#4a6080;--muted2:#7a94b8;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+
+/* TICKER */
+.ticker-wrap{background:var(--s2);border-bottom:1px solid var(--border);overflow:hidden;height:28px;display:flex;align-items:center;}
+.ticker-track{display:flex;animation:ticker 60s linear infinite;white-space:nowrap;}
+.ticker-track:hover{animation-play-state:paused;}
+.tick-item{padding:0 20px;font-family:var(--mono);font-size:10px;border-right:1px solid var(--border);display:flex;gap:8px;align-items:center;height:28px;}
+.t-up{color:var(--green);}.t-dn{color:var(--red);}.t-mu{color:var(--muted2);}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+/* HEADER */
+.hdr{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--s1);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-box{width:36px;height:36px;background:linear-gradient(135deg,#00e676,#40c4ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo h1{font-size:15px;font-weight:700;color:#fff;}
+.logo p{font-size:9px;color:var(--muted);font-family:var(--mono);}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.live-pill{display:flex;align-items:center;gap:4px;font-size:9px;font-family:var(--mono);color:var(--green);background:var(--green2);border:1px solid rgba(0,230,118,.3);padding:3px 8px;border-radius:20px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.sync-txt{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.btn{padding:7px 14px;border-radius:7px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.btn-go{background:linear-gradient(135deg,#00e676,#00bcd4);color:#000;}
+.btn-go:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,230,118,.3);}
+.btn-go:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-sm{background:var(--s3);border:1px solid var(--border);color:var(--muted2);cursor:pointer;padding:5px 10px;border-radius:6px;font-size:10px;font-family:var(--sans);transition:all .15s;}
+.btn-sm:hover{border-color:var(--blue);color:var(--blue);}
+.spin{animation:spin 1s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* PIPELINE */
+.pipeline{display:flex;padding:8px 18px;background:var(--s2);border-bottom:1px solid var(--border);overflow-x:auto;align-items:center;}
+.ps{display:flex;align-items:center;flex:1;min-width:0;}
+.pnode{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:70px;}
+.pcircle{width:26px;height:26px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;background:var(--s1);transition:all .3s;}
+.pcircle.done{border-color:var(--green);background:var(--green2);}
+.pcircle.active{border-color:var(--blue);background:var(--blue2);animation:ring 1.5s infinite;}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(64,196,255,.4);}50%{box-shadow:0 0 0 5px rgba(64,196,255,0);}}
+.plbl{font-size:8px;color:var(--muted);text-align:center;font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;}
+.pconn{flex:1;height:2px;background:var(--border);transition:background .3s;}
+.pconn.done{background:var(--green);}
+.prog-bar{height:2px;background:var(--border);}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));width:0%;transition:width .4s ease;}
+
+/* STATUS BAR */
+.status-bar{display:flex;align-items:center;gap:10px;padding:6px 18px;background:rgba(0,230,118,.04);border-bottom:1px solid rgba(0,230,118,.15);flex-wrap:wrap;font-family:var(--mono);font-size:9px;color:var(--muted2);}
+.sbadge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:3px;font-size:9px;font-weight:700;}
+.sb-g{background:var(--green2);color:var(--green);border:1px solid rgba(0,230,118,.3);}
+.sb-y{background:var(--yellow2);color:var(--yellow);border:1px solid rgba(255,202,40,.3);}
+.sb-r{background:var(--red2);color:var(--red);border:1px solid rgba(255,82,82,.3);}
+.sb-b{background:var(--blue2);color:var(--blue);border:1px solid rgba(64,196,255,.2);}
+
+/* ERROR */
+.err{background:rgba(255,82,82,.1);border:1px solid rgba(255,82,82,.3);border-radius:6px;padding:8px 14px;margin:8px 18px;font-size:11px;color:var(--red);font-family:var(--mono);display:none;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.stat{background:var(--s1);padding:8px 12px;text-align:center;}
+.sn{font-family:var(--mono);font-size:20px;font-weight:600;line-height:1;}
+.sl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.ng{color:var(--green);}.ny{color:var(--yellow);}.nr{color:var(--red);}.nb{color:var(--blue);}.np{color:var(--purple);}.no{color:var(--orange);}
+
+/* CONTROLS */
+.ctrl{padding:7px 18px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.cl{font-size:9px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;}
+.chip{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted2);transition:all .15s;font-family:var(--sans);}
+.chip.on{border-color:var(--green);color:var(--green);background:var(--green2);}
+.chip:hover:not(.on){border-color:var(--muted2);color:var(--text);}
+.sep{width:1px;height:16px;background:var(--border);margin:0 2px;}
+.sbox{flex:1;min-width:100px;max-width:180px;background:var(--s1);border:1px solid var(--border);color:var(--text);padding:4px 9px;border-radius:6px;font-family:var(--mono);font-size:10px;}
+.sbox:focus{outline:none;border-color:var(--blue);}
+.sbox::placeholder{color:var(--muted);}
+.din{background:var(--s1);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;font-family:var(--mono);font-size:10px;}
+.din:focus{outline:none;border-color:var(--blue);}
+
+/* TABLE */
+.twrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead tr{background:var(--s2);position:sticky;top:0;z-index:10;}
+th{padding:7px 11px;text-align:left;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border-bottom:1px solid var(--border);font-family:var(--mono);cursor:pointer;user-select:none;}
+th:hover{color:var(--blue);}
+td{padding:9px 11px;border-bottom:1px solid rgba(28,45,71,.5);vertical-align:middle;}
+tbody tr:hover{background:rgba(255,255,255,.015);}
+.sn2{font-weight:600;color:#fff;font-size:12px;}
+.stick{font-size:9px;color:var(--muted);font-family:var(--mono);}
+.dt{font-family:var(--mono);font-size:9px;color:var(--muted2);}
+.ep{font-family:var(--mono);font-weight:600;color:var(--text);}
+.slp{font-family:var(--mono);font-weight:600;color:var(--red);}
+.cv{font-family:var(--mono);font-weight:700;font-size:12px;}
+.pup{color:var(--green);}.pdn{color:var(--red);}.pne{color:var(--muted2);}
+.csm{font-family:var(--mono);font-size:9px;}
+.psrc{display:inline-flex;align-items:center;gap:2px;font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;margin-top:2px;}
+.pl{background:var(--green2);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.pc{background:var(--yellow2);color:var(--yellow);border:1px solid rgba(255,202,40,.2);}
+.tw{display:flex;flex-direction:column;gap:2px;}
+.tv{font-family:var(--mono);font-size:9px;color:var(--muted2);}
+.tb{display:flex;gap:2px;margin-top:2px;}
+.td{width:8px;height:8px;border-radius:2px;background:var(--border);}
+.td.hit{background:var(--green);}
+.td.nxt{background:var(--yellow);animation:blink 1.5s infinite;}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;white-space:nowrap;font-family:var(--mono);}
+.bg{background:var(--green2);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.by{background:var(--yellow2);color:var(--yellow);border:1px solid rgba(255,202,40,.25);}
+.br{background:var(--red2);color:var(--red);border:1px solid rgba(255,82,82,.25);}
+.bb{background:var(--blue2);color:var(--blue);border:1px solid rgba(64,196,255,.2);}
+.bp{background:rgba(179,136,255,.1);color:var(--purple);border:1px solid rgba(179,136,255,.25);}
+.bo{background:rgba(255,171,64,.1);color:var(--orange);border:1px solid rgba(255,171,64,.25);}
+.bk{background:rgba(74,96,128,.2);color:var(--muted2);border:1px solid var(--border);}
+.rr{font-family:var(--mono);font-size:10px;font-weight:600;}
+.rr-g{color:var(--green);}.rr-y{color:var(--yellow);}.rr-r{color:var(--red);}
+.act{font-size:10px;color:var(--muted2);max-width:150px;line-height:1.4;}
+
+/* BRIEFING */
+.brief{background:var(--s2);border-top:1px solid var(--border);padding:12px 18px;}
+.bh{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;}
+.bcard{background:var(--s1);border:1px solid var(--border);border-radius:7px;padding:10px 12px;display:flex;gap:8px;}
+.bico{font-size:15px;flex-shrink:0;margin-top:1px;}
+.btt{font-size:10px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.bdd{font-size:10px;color:var(--muted2);line-height:1.5;}
+
+/* FEED */
+.feed{background:var(--s1);border-top:1px solid var(--border);}
+.ftop{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ftop h3{font-size:10px;font-family:var(--mono);color:var(--muted2);font-weight:600;}
+.fbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;padding:8px;max-height:260px;overflow-y:auto;}
+.fmsg{background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:7px 9px;}
+.fmsg.fc{border-left:3px solid var(--green);}
+.fmsg.fr{border-left:3px solid var(--yellow);}
+.fmsg.fi{border-left:3px solid var(--muted);}
+.ft2{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:2px;display:flex;justify-content:space-between;}
+.fx{font-size:10px;color:var(--muted2);line-height:1.5;}
+.fx strong{color:var(--text);}
+
+/* EMPTY */
+.empty{padding:50px 20px;text-align:center;color:var(--muted);}
+.ei{font-size:32px;margin-bottom:10px;}
+.empty h3{font-size:13px;color:var(--muted2);margin-bottom:6px;}
+.empty p{font-size:11px;line-height:1.7;}
+.empty code{background:var(--s3);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:10px;color:var(--blue);}
+
+.footer{padding:8px 18px;border-top:1px solid var(--border);background:var(--s2);font-size:9px;color:var(--muted);font-family:var(--mono);text-align:center;line-height:1.7;}
+
+@media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){
+  th:nth-child(8),td:nth-child(8),th:nth-child(9),td:nth-child(9){display:none;}
+  .stats{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="ticker-wrap"><div class="ticker-track" id="ticker">Loading...</div></div>
+
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-box">📡</div>
+    <div>
+      <h1>StockPro Live &nbsp;<span style="font-size:9px;color:var(--green);font-family:var(--mono)">SERVER-SIDE FETCH</span></h1>
+      <p>t.me/StockPro_Online · Dr. Seema Jain · SEBI INH100006667</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-pill"><div class="dot"></div>LIVE</div>
+    <span class="sync-txt" id="syncTxt">Not synced</span>
+    <button class="btn-sm" onclick="toggleFeed()">📨 Feed</button>
+    <button class="btn btn-go" id="mainBtn" onclick="runSync()">
+      <span id="bico">⚡</span><span id="blbl">Fetch Live</span>
+    </button>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div class="pipeline">
+  <div class="ps"><div class="pnode"><div class="pcircle done" id="pc1">✅</div><div class="plbl">Your Server</div></div><div class="pconn done" id="cn1"></div></div>
+  <div class="ps"><div class="pnode"><div class="pcircle" id="pc2">🌐</div><div class="plbl">Fetch t.me</div></div><div class="pconn" id="cn2"></div></div>
+  <div class="ps"><div class="pnode"><div class="pcircle" id="pc3">🔍</div><div class="plbl">Regex Parse</div></div><div class="pconn" id="cn3"></div></div>
+  <div class="ps"><div class="pnode"><div class="pcircle" id="pc4">💹</div><div class="plbl">NSE Price</div></div><div class="pconn" id="cn4"></div></div>
+  <div class="ps"><div class="pnode"><div class="pcircle" id="pc5">🎯</div><div class="plbl">Status</div></div><div class="pconn" id="cn5"></div></div>
+  <div class="ps"><div class="pnode"><div class="pcircle" id="pc6">📋</div><div class="plbl">Dashboard</div></div></div>
+</div>
+<div class="prog-bar"><div class="prog-fill" id="prog"></div></div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="sbar" style="display:none">
+  <span>Telegram:</span><span class="sbadge sb-b" id="tgSrc">●</span>
+  <span>NSE Live:</span><span class="sbadge sb-g" id="nLive">● 0</span>
+  <span class="sbadge sb-y" id="nCache">● 0 cached</span>
+  <span class="sbadge sb-r" id="nFail">● 0 failed</span>
+  <span style="margin-left:auto">Next sync: <strong id="cd" style="color:var(--green)">—</strong></span>
+</div>
+<div class="err" id="err"></div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="sn nb" id="sT">0</div><div class="sl">Total Calls</div></div>
+  <div class="stat"><div class="sn no" id="sN">0</div><div class="sl">New Today</div></div>
+  <div class="stat"><div class="sn ng" id="sH">0</div><div class="sl">Targets Hit</div></div>
+  <div class="stat"><div class="sn ny" id="sW">0</div><div class="sl">Watch</div></div>
+  <div class="stat"><div class="sn nr" id="sE">0</div><div class="sl">SL Hit</div></div>
+  <div class="stat"><div class="sn np" id="sWR">—</div><div class="sl">Hit Rate</div></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrl">
+  <span class="cl">Type:</span>
+  <span class="chip on" id="cf-all" onclick="fT('all')">All</span>
+  <span class="chip" id="cf-Positional" onclick="fT('Positional')">Positional</span>
+  <span class="chip" id="cf-Swing" onclick="fT('Swing')">Swing</span>
+  <span class="chip" id="cf-Breakout" onclick="fT('Breakout')">Breakout</span>
+  <div class="sep"></div>
+  <span class="cl">Date:</span>
+  <input type="date" class="din" id="df" onchange="render()"/>
+  <button class="btn-sm" onclick="document.getElementById('df').value='';render()">✕</button>
+  <div class="sep"></div>
+  <span class="chip" id="cs-hit" onclick="fS('hit')">✅ Hit</span>
+  <span class="chip" id="cs-watch" onclick="fS('watch')">⚠️ Watch</span>
+  <div class="sep"></div>
+  <input class="sbox" id="srch" placeholder="Search stock..." oninput="render()"/>
+  <button class="btn-sm" onclick="resetF()">Reset</button>
+</div>
+
+<!-- TABLE -->
+<div class="twrap">
+  <table>
+    <thead><tr>
+      <th onclick="sc('stock')">Stock ⇅</th>
+      <th onclick="sc('dateCalled')">Called ⇅</th>
+      <th>Type</th>
+      <th onclick="sc('entry')">Entry ⇅</th>
+      <th>SL</th>
+      <th>Targets</th>
+      <th onclick="sc('cmp')">Live CMP ⇅</th>
+      <th onclick="sc('rr')">R:R ⇅</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr></thead>
+    <tbody id="tbody">
+      <tr><td colspan="10"><div class="empty">
+        <div class="ei">🚀</div>
+        <h3>Vercel Serverless — No CORS Issues</h3>
+        <p>Your server fetches Telegram directly.<br>
+        Browser → <code>/api/telegram</code> → Server → <code>t.me/s/StockPro_Online</code><br><br>
+        Click "Fetch Live" to start.</p>
+      </div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- BRIEFING -->
+<div class="brief" id="briefBox" style="display:none">
+  <div class="bh">📋 Daily Summary</div>
+  <div class="bgrid" id="bgrid"></div>
+</div>
+
+<!-- FEED -->
+<div class="feed" id="feedWrap" style="display:none">
+  <div class="ftop">
+    <h3>📨 Raw Telegram Feed &nbsp;<span class="badge bk" id="fcnt">0 msgs</span></h3>
+    <button class="btn-sm" onclick="toggleFeed()">✕</button>
+  </div>
+  <div class="fbody" id="fbody"></div>
+</div>
+
+<div class="footer">
+  Architecture: Browser → /api/telegram (Vercel) → t.me/s/StockPro_Online (no CORS) &nbsp;|&nbsp;
+  NSE: Browser → /api/nse (Vercel) → Yahoo Finance .NS &nbsp;|&nbsp;
+  Parse: Pure Regex · Auto-sync: 60s &nbsp;|&nbsp; ⚠️ Not investment advice · SEBI INH100006667
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// API BASE — your Vercel deployment URL
+// During dev: '' (same origin via vercel dev)
+// After deploy: '' still works (same domain)
+// ═══════════════════════════════════════════
+const API = '';  // leave empty — calls /api/telegram on same domain
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let CALLS = [], rawFeed = [];
+let typeF='all', statF='all', sortCol=null, sortDir=1;
+let feedOpen=false, cdTimer=null, cd=60;
+let liveCnt=0, cacheCnt=0, failCnt=0;
+
+// ═══════════════════════════════════════════
+// MAIN SYNC
+// ═══════════════════════════════════════════
+async function runSync() {
+  const btn=document.getElementById('mainBtn');
+  const ico=document.getElementById('bico');
+  const lbl=document.getElementById('blbl');
+  btn.disabled=true; ico.className='spin'; ico.textContent='⏳'; lbl.textContent='Syncing...';
+  if(cdTimer) clearInterval(cdTimer);
+  showErr('');
+
+  setP(1,'done'); setProg(12);
+
+  // STEP 1 — Fetch Telegram via your serverless function
+  setP(2,'active'); lbl.textContent='Server fetching Telegram...'; setProg(20);
+  let tgData = null;
+  try {
+    const res = await fetch(`${API}/api/telegram`, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    tgData = await res.json();
+  } catch(e) {
+    showErr(`⚠️ Could not reach /api/telegram — ${e.message}. Make sure you deployed to Vercel.`);
+    btn.disabled=false; ico.className=''; ico.textContent='🔄'; lbl.textContent='Retry';
+    return;
+  }
+
+  if (!tgData.success) {
+    showErr(`⚠️ Telegram fetch failed: ${tgData.error}`);
+    btn.disabled=false; ico.className=''; ico.textContent='🔄'; lbl.textContent='Retry';
+    return;
+  }
+
+  document.getElementById('tgSrc').textContent =
+    `● ${tgData.callCount} calls · ${tgData.msgCount} msgs · ${new Date(tgData.fetchedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
+  rawFeed = tgData.feed || [];
+  setP(2,'done'); setProg(35);
+
+  // STEP 2 — Merge parsed calls
+  setP(3,'active'); setProg(45);
+  tgData.calls.forEach(p => {
+    const exists = CALLS.find(c => c.stock===p.stock && c.dateCalled===p.dateCalled);
+    if (!exists) { p.cmp=null; p.priceSource=null; CALLS.push(p); }
+    else {
+      if (p.todayHigh > (exists.todayHigh||0)) exists.todayHigh = p.todayHigh;
+    }
+  });
+  setP(3,'done'); setProg(55);
+
+  // STEP 3 — Fetch NSE prices via your serverless function
+  setP(4,'active'); lbl.textContent='Fetching NSE prices...'; setProg(60);
+  const symbols = [...new Set(CALLS.map(c=>c.ticker))].join(',');
+  liveCnt=0; cacheCnt=0; failCnt=0;
+  try {
+    const res = await fetch(`${API}/api/nse?symbols=${symbols}`, { signal: AbortSignal.timeout(15000) });
+    if (res.ok) {
+      const nseData = await res.json();
+      CALLS.forEach(c => {
+        const p = nseData.prices?.[c.ticker];
+        if (p?.price) { c.cmp=p.price; c.priceSource='live'; c.priceData=p; liveCnt++; }
+        else if (c.todayHigh) { c.cmp=c.todayHigh; c.priceSource='cache'; cacheCnt++; }
+        else failCnt++;
+      });
+    }
+  } catch(e) {
+    // Fallback to todayHigh
+    CALLS.forEach(c => { if(!c.cmp && c.todayHigh){ c.cmp=c.todayHigh; c.priceSource='cache'; cacheCnt++; } else if(!c.cmp) failCnt++; });
+  }
+  updateSBar();
+  setP(4,'done'); setProg(78);
+
+  // STEP 4 — Status + render
+  setP(5,'active'); setProg(88);
+  await delay(200);
+  updateStats(); render(); renderBriefing();
+  if(feedOpen) renderFeed();
+  renderTicker();
+  setP(5,'done'); setP(6,'done'); setProg(100);
+
+  btn.disabled=false; ico.className=''; ico.textContent='🔄'; lbl.textContent='Sync';
+  document.getElementById('syncTxt').textContent =
+    `Synced: ${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+
+  // Auto countdown
+  cd=60;
+  cdTimer=setInterval(()=>{
+    cd--;
+    const el=document.getElementById('cd');
+    if(el) el.textContent=cd+'s';
+    if(cd<=0){ clearInterval(cdTimer); runSync(); }
+  },1000);
+}
+
+// ═══════════════════════════════════════════
+// STATUS ENGINE
+// ═══════════════════════════════════════════
+function getStatus(c) {
+  const cmp=c.cmp;
+  if(!cmp) return{status:'⏳ Fetching',cls:'bk',action:'Waiting for live price.',pri:3};
+  const max=Math.max(...c.targets),min=Math.min(...c.targets);
+  const hit=c.targets.filter(t=>cmp>=t).length;
+  const pct=((min-cmp)/min*100);
+  if(cmp<=c.sl) return{status:'❌ SL Hit — EXIT',cls:'br',action:'SL breached! Exit immediately.',pri:0};
+  if(cmp>=max)  return{status:'✅ All Targets ✓', cls:'bg',action:'All targets done. Book full profits.',pri:2};
+  if(hit>=2)    return{status:`✅ T${hit} Achieved`,cls:'bg',action:`Book ${Math.min(hit*25,75)}% profits. Trail SL.`,pri:2};
+  if(hit===1)   return{status:'✅ T1 Achieved',cls:'bg',action:'Book 30%. Move SL to breakeven.',pri:2};
+  if(pct<=2)    return{status:'⚠️ Near Target',cls:'by',action:'Within 2% of T1. Check every 15min.',pri:1};
+  if(pct<=5)    return{status:'⚠️ Watch Closely',cls:'by',action:'Within 5% of target. Check hourly.',pri:1};
+  return         {status:'🔵 Active Hold',cls:'bb',action:'Hold with original SL.',pri:2};
+}
+
+function calcRR(c) {
+  const r=c.entry-c.sl, w=Math.max(...c.targets)-c.entry;
+  return r>0?(w/r).toFixed(1):null;
+}
+
+// ═══════════════════════════════════════════
+// RENDER TABLE
+// ═══════════════════════════════════════════
+function render() {
+  let calls=[...CALLS];
+  if(typeF!=='all') calls=calls.filter(c=>c.type===typeF);
+  if(statF==='hit')  calls=calls.filter(c=>{const s=getStatus(c).status;return s.includes('T')||s.includes('All');});
+  if(statF==='watch')calls=calls.filter(c=>getStatus(c).status.includes('Watch')||getStatus(c).status.includes('Near'));
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  if(q) calls=calls.filter(c=>c.stock.toLowerCase().includes(q));
+  const df=document.getElementById('df')?.value;
+  if(df) calls=calls.filter(c=>c.dateCalled===df);
+  if(sortCol) calls.sort((a,b)=>{
+    const av=sortCol==='cmp'?(a.cmp||0):(a[sortCol]??-999);
+    const bv=sortCol==='cmp'?(b.cmp||0):(b[sortCol]??-999);
+    return(av>bv?1:-1)*sortDir;
+  });
+
+  const today=new Date().toISOString().split('T')[0];
+  const tbody=document.getElementById('tbody');
+  if(!calls.length){
+    tbody.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="ei">🔍</div><h3>No calls match</h3><p>Reset filters or fetch data</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML=calls.map(c=>{
+    const{status,cls,action}=getStatus(c);
+    const cmp=c.cmp, pct=cmp&&c.entry?((cmp-c.entry)/c.entry*100):null;
+    const rr=calcRR(c);
+    const rrC=!rr?'rr-y':parseFloat(rr)>=3?'rr-g':parseFloat(rr)>=1.5?'rr-y':'rr-r';
+    const tC={Positional:'bb',Swing:'bo',Breakout:'bp'}[c.type]||'bk';
+    const t3=c.targets.slice(0,3).map(t=>`₹${t}`).join('›')+(c.targets.length>3?`+${c.targets.length-3}`:'');
+    const dots=c.targets.slice(0,6).map((t,i)=>{
+      const h=cmp&&cmp>=t,n=!h&&c.targets.slice(0,i).every(pt=>cmp&&cmp>=pt);
+      return`<div class="td${h?' hit':n?' nxt':''}" title="T${i+1}:₹${t}"></div>`;
+    }).join('');
+    const cmpH=cmp
+      ?`<div class="cv ${pct>=0?'pup':'pdn'}">₹${cmp.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="csm ${pct>=0?'pup':'pdn'}">${pct>=0?'+':''}${(pct||0).toFixed(2)}%</div>
+        <div class="psrc ${c.priceSource==='live'?'pl':'pc'}">${c.priceSource==='live'?'● NSE LIVE':'◎ CACHE'}</div>`
+      :`<span class="pne" style="font-size:10px;font-family:var(--mono)">—</span>`;
+    const isNew=c.dateCalled===today;
+    return`<tr style="${isNew?'background:rgba(0,230,118,.03)':''}">
+      <td><div class="sn2">${c.stock}${isNew?'<span style="font-size:8px;color:var(--green);margin-left:4px;font-family:var(--mono)">NEW</span>':''}</div><div class="stick">${c.ticker}</div></td>
+      <td><div class="dt">${c.dateCalled}</div></td>
+      <td><span class="badge ${tC}">${c.type}</span></td>
+      <td><div class="ep">₹${c.entry?.toLocaleString('en-IN')}</div></td>
+      <td><div class="slp">₹${c.sl?.toLocaleString('en-IN')}</div></td>
+      <td><div class="tw"><div class="tv">${t3}</div><div class="tb">${dots}</div></div></td>
+      <td>${cmpH}</td>
+      <td><span class="rr ${rrC}">${rr?'1:'+rr:'—'}</span></td>
+      <td><span class="badge ${cls}">${status}</span></td>
+      <td><div class="act">${action}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// STATS + STATUS BAR
+// ═══════════════════════════════════════════
+function updateStats() {
+  const today=new Date().toISOString().split('T')[0];
+  const hit  =CALLS.filter(c=>{const s=getStatus(c).status;return s.includes('T')||s.includes('All');}).length;
+  const watch=CALLS.filter(c=>getStatus(c).status.includes('Watch')||getStatus(c).status.includes('Near')).length;
+  const exit =CALLS.filter(c=>getStatus(c).status.includes('EXIT')).length;
+  document.getElementById('sT').textContent=CALLS.length;
+  document.getElementById('sN').textContent=CALLS.filter(c=>c.dateCalled===today).length;
+  document.getElementById('sH').textContent=hit;
+  document.getElementById('sW').textContent=watch;
+  document.getElementById('sE').textContent=exit;
+  document.getElementById('sWR').textContent=CALLS.length?Math.round(hit/CALLS.length*100)+'%':'—';
+}
+
+function updateSBar() {
+  document.getElementById('sbar').style.display='flex';
+  document.getElementById('nLive').textContent=`● ${liveCnt} live`;
+  document.getElementById('nCache').textContent=`● ${cacheCnt} cached`;
+  document.getElementById('nFail').textContent=`● ${failCnt} failed`;
+}
+
+// ═══════════════════════════════════════════
+// BRIEFING
+// ═══════════════════════════════════════════
+function renderBriefing() {
+  document.getElementById('briefBox').style.display='block';
+  const today=new Date().toISOString().split('T')[0];
+  const td=CALLS.filter(c=>c.dateCalled===today);
+  const wc=CALLS.filter(c=>c.cmp);
+  const top=[...wc].sort((a,b)=>((b.cmp-b.entry)/b.entry)-((a.cmp-a.entry)/a.entry))[0];
+  const hit=CALLS.filter(c=>{const s=getStatus(c).status;return s.includes('T')||s.includes('All');});
+  const wtch=CALLS.filter(c=>getStatus(c).status.includes('Watch')||getStatus(c).status.includes('Near'));
+  const act=CALLS.filter(c=>getStatus(c).status.includes('Active'));
+  const wr=CALLS.length?Math.round(hit.length/CALLS.length*100):0;
+  const tp=top?((top.cmp-top.entry)/top.entry*100).toFixed(1):0;
+  const cards=[
+    {ico:'📡',t:`${td.length} New Call${td.length!==1?'s':''} Today`,
+     d:td.length?`Today: ${td.map(c=>c.stock.split(' ')[0]).join(', ')}. Auto-parsed from Telegram.`:'No new calls yet today. Check after 4AM IST.'},
+    {ico:'🏆',t:top?`Star: ${top.stock.split(' ')[0]} (+${tp}%)`:'No data',
+     d:top?`Called ₹${top.entry} on ${top.dateCalled}. CMP ₹${top.cmp?.toFixed(2)}. ${getStatus(top).status}.`:'Fetch data to see top performer.'},
+    {ico:'✅',t:`${hit.length}/${CALLS.length} hit (${wr}% win rate)`,
+     d:hit.length?`Winners: ${hit.slice(0,4).map(c=>c.stock.split(' ')[0]).join(', ')}. Book profits & trail SLs.`:'No targets hit yet.'},
+    {ico:'⚠️',t:wtch.length?`Watch: ${wtch.slice(0,3).map(c=>c.stock.split(' ')[0]).join(', ')}`:'All healthy',
+     d:wtch.length?wtch.slice(0,3).map(c=>`${c.stock.split(' ')[0]}: ₹${c.cmp?.toFixed(2)||'?'} → T1 ₹${c.targets[0]}`).join(' | '):'No stocks near SL.'},
+  ];
+  document.getElementById('bgrid').innerHTML=cards.map(c=>
+    `<div class="bcard"><div class="bico">${c.ico}</div><div><div class="btt">${c.t}</div><div class="bdd">${c.d}</div></div></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════
+// FEED
+// ═══════════════════════════════════════════
+function renderFeed() {
+  const msgs=rawFeed.slice(-20).reverse();
+  document.getElementById('fcnt').textContent=msgs.length+' msgs';
+  const isC=t=>/POSITIONAL\s+TRADE|SWING\s+TRADE/i.test(t);
+  const isR=t=>/hit.*high|made.*high|Upper Circuit|points done/i.test(t);
+  document.getElementById('fbody').innerHTML=msgs.map(m=>{
+    const cls=isC(m.text)?'fc':isR(m.text)?'fr':'fi';
+    const tag=cls==='fc'?'<span class="badge bg">📢 CALL</span>':cls==='fr'?'<span class="badge by">📈 RESULT</span>':'<span class="badge bk">ℹ INFO</span>';
+    const ts=m.time?new Date(m.time).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    const txt=m.text.slice(0,220).replace(/POSITIONAL TRADE/gi,'<strong>POSITIONAL</strong>').replace(/ABOVE\s+([\d,]+)/gi,'ABOVE <strong>₹$1</strong>').replace(/SL\s+([\d,]+)/gi,'SL <strong>₹$1</strong>');
+    return`<div class="fmsg ${cls}"><div class="ft2"><span>${ts}</span>${tag}</div><div class="fx">${txt}</div></div>`;
+  }).join('');
+}
+
+function toggleFeed(){feedOpen=!feedOpen;document.getElementById('feedWrap').style.display=feedOpen?'block':'none';if(feedOpen&&rawFeed.length)renderFeed();}
+
+// ═══════════════════════════════════════════
+// TICKER
+// ═══════════════════════════════════════════
+function renderTicker() {
+  const items=CALLS.filter(c=>c.cmp).slice(0,12).map(c=>{
+    const pct=((c.cmp-c.entry)/c.entry*100);
+    return`<div class="tick-item"><span class="t-mu">${c.stock.split(' ')[0]}</span><span class="${pct>=0?'t-up':'t-dn'}">₹${c.cmp.toFixed(2)}</span><span class="${pct>=0?'t-up':'t-dn'}" style="font-size:8px">${pct>=0?'+':''}${pct.toFixed(1)}%</span></div>`;
+  }).join('');
+  const el=document.getElementById('ticker');
+  el.innerHTML=(items||'<div class="tick-item"><span class="t-mu">Waiting for data...</span></div>')+items;
+}
+
+// ═══════════════════════════════════════════
+// FILTERS & HELPERS
+// ═══════════════════════════════════════════
+function fT(t){typeF=t;document.querySelectorAll('[id^="cf-"]').forEach(e=>e.classList.remove('on'));document.getElementById('cf-'+t)?.classList.add('on');render();}
+function fS(s){statF=statF===s?'all':s;document.querySelectorAll('[id^="cs-"]').forEach(e=>e.classList.remove('on'));if(statF!=='all')document.getElementById('cs-'+s)?.classList.add('on');render();}
+function resetF(){typeF='all';statF='all';document.querySelectorAll('.chip').forEach(e=>e.classList.remove('on'));document.getElementById('cf-all')?.classList.add('on');document.getElementById('srch').value='';document.getElementById('df').value='';render();}
+function sc(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}render();}
+function setP(n,s){const el=document.getElementById('pc'+n),co=document.getElementById('cn'+n),ic=['','✅','🌐','🔍','💹','🎯','📋'];el.className='pcircle '+(s==='done'?'done':s==='active'?'active':'');el.textContent=s==='done'?'✅':ic[n];if(co&&s==='done')co.classList.add('done');}
+function setProg(p){document.getElementById('prog').style.width=p+'%';}
+function showErr(m){const e=document.getElementById('err');e.style.display=m?'block':'none';e.textContent=m;}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+window.onload=()=>{
+  document.getElementById('df').value=new Date().toISOString().split('T')[0];
+  runSync();
+};
+</script>
+</body>
+</html>
