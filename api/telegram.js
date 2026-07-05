@@ -1,7 +1,6 @@
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
     return res.status(200).end();
   }
 
@@ -9,23 +8,16 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 's-maxage=55, stale-while-revalidate=30');
 
   try {
-    const url = 'https://t.me/s/StockPro_Online';
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; StockProBot/1.0)',
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!response.ok) {
-      return res.status(502).json({ error: `Telegram returned ${response.status}` });
-    }
-
-    const html = await response.text();
-
-    // Parse calls from HTML
     const calls = [];
     const seen = new Set();
+    const texts = [];
+
+    // Fetch 3 pages to get more history
+    const pages = [
+      'https://t.me/s/StockPro_Online',
+      'https://t.me/s/StockPro_Online?before=130000',
+      'https://t.me/s/StockPro_Online?before=129900',
+    ];
 
     function stripTags(s) {
       return s
@@ -39,20 +31,36 @@ module.exports = async (req, res) => {
       return parseFloat(s.toString().replace(/,/g, ''));
     }
 
-    // Extract text blocks
-    const textPattern = /class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>(?=\s*<\/div>)/gi;
-    const timePattern  = /datetime="([^"]+)"/gi;
+    // Fetch all pages
+    for (const pageUrl of pages) {
+      try {
+        const response = await fetch(pageUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(8000),
+        });
 
-    let tm, tt;
-    const texts = [], times = [];
-    while ((tm = textPattern.exec(html)) !== null) texts.push(stripTags(tm[1]));
-    while ((tt = timePattern.exec(html))  !== null) times.push(tt[1]);
+        if (!response.ok) continue;
 
-    // Parse each text block
-    texts.forEach((txt, idx) => {
-      const ts = times[idx] || new Date().toISOString();
-      const date = ts.split('T')[0];
+        const html = await response.text();
 
+        // Extract text blocks
+        const textPattern = /class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>(?=\s*<\/div>)/gi;
+        const timePattern = /datetime="([^"]+)"/gi;
+
+        let tm, tt;
+        while ((tm = textPattern.exec(html)) !== null) {
+          texts.push(stripTags(tm[1]));
+        }
+        while ((tt = timePattern.exec(html)) !== null) {
+          // matched in order with texts
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+
+    // Parse all texts
+    texts.forEach(txt => {
       const isCall = /POSITIONAL\s+TRADE|SWING\s+TRADE/i.test(txt);
       const isBreakout = /fresh\s+breakout|breakout\s+above/i.test(txt) && !/hit|made|moved/i.test(txt);
       const isWatch = /^Watch\s+[A-Z]/i.test(txt) && /above\s+[\d]/i.test(txt);
@@ -70,7 +78,7 @@ module.exports = async (req, res) => {
 
       if (!stock || stock.length < 2) return;
 
-      const key = stock + '_' + date;
+      const key = stock;
       if (seen.has(key)) return;
       seen.add(key);
 
@@ -96,11 +104,7 @@ module.exports = async (req, res) => {
         }
       }
 
-      const holdM = txt.match(/Hold\s+(.+?)(?:\s+Please|\s*$)/i);
-      if (holdM) hold = holdM[1].trim();
-
-      const yahooSym = stock.replace(/\s+/g,'').replace(/&/g,'AND')
-        .substring(0, 15);
+      const yahooSym = stock.replace(/\s+/g,'').replace(/&/g,'AND').substring(0, 15);
 
       if (entry) {
         calls.push({
@@ -111,9 +115,8 @@ module.exports = async (req, res) => {
           sl: sl || parseFloat((entry * 0.95).toFixed(2)),
           targets: targets.length ? targets : [parseFloat((entry * 1.03).toFixed(2))],
           hold,
-          dateCalled: date,
+          dateCalled: new Date().toISOString().split('T')[0],
           todayHigh: null,
-          movePct: null,
         });
       }
     });
@@ -123,8 +126,8 @@ module.exports = async (req, res) => {
       fetchedAt: new Date().toISOString(),
       msgCount: texts.length,
       callCount: calls.length,
-      calls,
-      feed: texts.slice(-30).map(t => ({ text: t.slice(0, 300), time: new Date().toISOString() })),
+      calls: calls.slice(0, 50), // Limit to 50 most recent
+      feed: texts.slice(-30),
     });
 
   } catch (err) {
