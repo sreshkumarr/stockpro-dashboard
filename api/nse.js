@@ -1,8 +1,4 @@
-// api/nse.js
-// Vercel Serverless Function — fetches Yahoo Finance .NS prices server-side
-// Called by: GET /api/nse?symbols=ASHOKLEYLAND,PARASDEFE,NETWEB
-
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).end();
@@ -15,7 +11,7 @@ export default async function handler(req, res) {
   if (!symbols) return res.status(400).json({ error: 'symbols param required' });
 
   const symList = symbols.split(',').map(s => s.trim()).filter(Boolean).slice(0, 20);
-  const prices  = {};
+  const prices = {};
 
   await Promise.all(symList.map(async sym => {
     try {
@@ -29,26 +25,18 @@ export default async function handler(req, res) {
       const meta = json?.chart?.result?.[0]?.meta;
       if (meta?.regularMarketPrice) {
         prices[sym] = {
-          price:  meta.regularMarketPrice,
-          open:   meta.regularMarketOpen   || null,
-          high:   meta.regularMarketDayHigh|| null,
-          low:    meta.regularMarketDayLow || null,
-          prev:   meta.chartPreviousClose  || null,
-          change: meta.regularMarketPrice - (meta.chartPreviousClose || meta.regularMarketPrice),
-          pct:    ((meta.regularMarketPrice - (meta.chartPreviousClose||meta.regularMarketPrice)) / (meta.chartPreviousClose||meta.regularMarketPrice) * 100),
+          price: meta.regularMarketPrice,
           source: 'live',
-          sym,
         };
       }
     } catch (e) {
-      prices[sym] = { error: e.message, source: 'failed', sym };
+      prices[sym] = { error: e.message, source: 'failed' };
     }
   }));
 
   return res.status(200).json({
-    success:   true,
+    success: true,
     fetchedAt: new Date().toISOString(),
-    count:     Object.keys(prices).length,
     prices,
   });
-}
+};
